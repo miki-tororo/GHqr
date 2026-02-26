@@ -1,3 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    /* 全体のスタイル */
+    body { 
+      background-color: #f5f7fa; 
+      color: #333; 
+      font-family: 'Helvetica Neue', Arial, sans-serif; 
+      margin: 0; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      min-height: 100vh;
+    }
+
+    h2 { margin-top: 30px; font-weight: 600; color: #2c3e50; }
+
+    /* カードコンテナ */
+    .container {
+      width: 90%;
+      max-width: 450px;
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-top: 20px;
+    }
+
+    /* カメラ表示エリア */
+    #reader { 
+      width: 100%; 
+      border-radius: 12px;
+      overflow: hidden;
+      border: none !important; /* ライブラリの枠線を消す */
+      background-color: #000;
+    }
+
+    /* 起動ボタン */
+    #start-btn { 
+      background-color: #4A90E2; 
+      color: white; 
+      border: none; 
+      padding: 15px 30px; 
+      font-size: 18px; 
+      font-weight: bold;
+      border-radius: 50px; 
+      cursor: pointer; 
+      transition: all 0.3s;
+      box-shadow: 0 4px 6px rgba(74, 144, 226, 0.3);
+      margin-bottom: 20px;
+    }
+    #start-btn:active { transform: scale(0.95); box-shadow: none; }
+
+    /* 結果表示エリア */
+    #result { 
+      margin-top: 25px; 
+      padding: 15px; 
+      font-size: 15px;
+      border-radius: 8px; 
+      background-color: #f8f9fa;
+      border-left: 5px solid #ccc;
+      transition: all 0.3s;
+      word-break: break-all;
+    }
+    
+    /* 読み取り成功時のクラス（JSから操作） */
+    .success {
+      background-color: #e8f5e9 !important;
+      border-left-color: #4caf50 !important;
+      color: #2e7d32;
+    }
+
+    /* html5-qrcodeの内部ボタンを非表示にする（自作ボタンを使うため） */
+    #reader button {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>マロン館用QR出退勤</h2>
+
+  <div class="container">
+    <button id="start-btn" onclick="initScanner()">カメラを起動する</button>
+    
+    <div id="reader"></div>
+    
+    <div id="result">スキャンを開始してください</div>
+  </div>
+
 <script>
   const GAS_URL = "https://script.google.com/macros/s/AKfycbwg5T7gv1xSUtLtm9409z7Fk8DcXJCHANBes7EWC-EUR8LtE114H_guSj2yHmxtLRFBNg/exec";
 
@@ -66,4 +160,5 @@
     });
   }
 </script>
+
 
