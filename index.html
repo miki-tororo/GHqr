@@ -156,9 +156,9 @@
       }
     })
     .catch(err => {
-      console.error(err);
-      resultElem.innerHTML = "通信エラー";
-    })
+  document.getElementById("result").innerText =
+    "通信エラー: " + JSON.stringify(err);
+});
     .finally(() => {
       setTimeout(() => {
         resultElem.classList.remove("success");
@@ -168,5 +168,6 @@
     });
   }
 </script>
+
 
 
