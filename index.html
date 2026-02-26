@@ -95,7 +95,6 @@
 <script>
   const GAS_URL = "https://script.google.com/macros/s/AKfycbwg5T7gv1xSUtLtm9409z7Fk8DcXJCHANBes7EWC-EUR8LtE114H_guSj2yHmxtLRFBNg/exec";
 
-
   let html5QrCode;
   let isScanning = false;
 
@@ -118,8 +117,8 @@
     ).then(() => {
       document.getElementById("result").innerText = "スキャン待機中...";
     }).catch(err => {
-      console.error(err);
-      document.getElementById("result").innerText = "カメラ起動エラー";
+      document.getElementById("result").innerText =
+        "カメラエラー: " + err.message;
       document.getElementById("start-btn").style.display = "inline-block";
     });
   }
@@ -134,14 +133,19 @@
 
     fetch(GAS_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: decodedText })
+      body: new URLSearchParams({
+        id: decodedText
+      })
     })
-    .then(res => res.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("HTTPエラー: " + response.status);
+      }
+      return response.json();
+    })
     .then(data => {
       if (data.status === "success") {
 
-        // 日本時間に変換
         const recordedDate = new Date(data.recordedAt);
         const formatted = recordedDate.toLocaleString("ja-JP");
 
@@ -156,8 +160,8 @@
       }
     })
     .catch(err => {
-    document.getElementById("result").innerText =
-    "通信エラー: " + JSON.stringify(err);
+      resultElem.innerText =
+        "通信エラー: " + err.message;
     })
     .finally(() => {
       setTimeout(() => {
@@ -168,6 +172,3 @@
     });
   }
 </script>
-
-
-
