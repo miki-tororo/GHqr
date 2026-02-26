@@ -156,9 +156,9 @@
       }
     })
     .catch(err => {
-  document.getElementById("result").innerText =
+    document.getElementById("result").innerText =
     "通信エラー: " + JSON.stringify(err);
-});
+    })
     .finally(() => {
       setTimeout(() => {
         resultElem.classList.remove("success");
