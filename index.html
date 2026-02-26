@@ -124,25 +124,17 @@
   }
 
   function onScanSuccess(decodedText) {
-    if (isScanning) return;
-    isScanning = true;
+  if (isScanning) return;
+  isScanning = true;
 
-    const resultElem = document.getElementById("result");
-    resultElem.classList.add("success");
-    resultElem.innerHTML = "送信中...";
+  const resultElem = document.getElementById("result");
+  resultElem.classList.add("success");
+  resultElem.innerHTML = "送信中...";
 
-    fetch(GAS_URL, {
-      method: "POST",
-      body: new URLSearchParams({
-        id: decodedText
-      })
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error("HTTPエラー: " + response.status);
-      }
-      return response.json();
-    })
+  const url = GAS_URL + "?id=" + encodeURIComponent(decodedText);
+
+  fetch(url)
+    .then(response => response.json())
     .then(data => {
       if (data.status === "success") {
 
@@ -154,14 +146,12 @@
           ID: ${data.id}<br>
           時刻: ${formatted}
         `;
-
       } else {
         resultElem.innerHTML = "エラー: " + data.message;
       }
     })
     .catch(err => {
-      resultElem.innerText =
-        "通信エラー: " + err.message;
+      resultElem.innerText = "通信エラー: " + err.message;
     })
     .finally(() => {
       setTimeout(() => {
@@ -170,5 +160,6 @@
         isScanning = false;
       }, 4000);
     });
-  }
+}
 </script>
+
