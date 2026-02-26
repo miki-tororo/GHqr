@@ -95,6 +95,7 @@
 <script>
   const GAS_URL = "https://script.google.com/macros/s/AKfycbwg5T7gv1xSUtLtm9409z7Fk8DcXJCHANBes7EWC-EUR8LtE114H_guSj2yHmxtLRFBNg/exec";
 
+
   let html5QrCode;
   let isScanning = false;
 
@@ -139,10 +140,17 @@
     .then(res => res.json())
     .then(data => {
       if (data.status === "success") {
-        resultElem.innerHTML =
-          "<strong>記録完了</strong><br>" +
-          "ID: " + data.id + "<br>" +
-          "時間: " + new Date(data.recordedAt).toLocaleString();
+
+        // 日本時間に変換
+        const recordedDate = new Date(data.recordedAt);
+        const formatted = recordedDate.toLocaleString("ja-JP");
+
+        resultElem.innerHTML = `
+          <strong>記録完了</strong><br>
+          ID: ${data.id}<br>
+          時刻: ${formatted}
+        `;
+
       } else {
         resultElem.innerHTML = "エラー: " + data.message;
       }
@@ -156,7 +164,7 @@
         resultElem.classList.remove("success");
         resultElem.innerHTML = "スキャン待機中...";
         isScanning = false;
-      }, 3000);
+      }, 4000);
     });
   }
 </script>
