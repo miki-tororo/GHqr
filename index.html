@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>マロン館用QR出退勤</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     /* 全体のスタイル */
@@ -15,11 +16,16 @@
       flex-direction: column; 
       align-items: center; 
       min-height: 100vh;
+      transition: background-color 0.3s ease; /* 背景色の変化をスムーズに */
     }
+
+    /* 状態別背景色 */
+    body.sending { background-color: #fff9c4; }   /* 送信中：黄色 */
+    body.success-bg { background-color: #c8e6c9; } /* 成功：緑 */
+    body.error-bg { background-color: #ffcdd2; }   /* 失敗：赤 */
 
     h2 { margin-top: 30px; font-weight: 600; color: #2c3e50; }
 
-    /* カードコンテナ */
     .container {
       width: 90%;
       max-width: 450px;
@@ -28,18 +34,17 @@
       border-radius: 16px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       margin-top: 20px;
+      text-align: center;
     }
 
-    /* カメラ表示エリア */
     #reader { 
       width: 100%; 
       border-radius: 12px;
       overflow: hidden;
-      border: none !important; /* ライブラリの枠線を消す */
+      border: none !important;
       background-color: #000;
     }
 
-    /* 起動ボタン */
     #start-btn { 
       background-color: #4A90E2; 
       color: white; 
@@ -55,7 +60,6 @@
     }
     #start-btn:active { transform: scale(0.95); box-shadow: none; }
 
-    /* 結果表示エリア */
     #result { 
       margin-top: 25px; 
       padding: 15px; 
@@ -65,19 +69,16 @@
       border-left: 5px solid #ccc;
       transition: all 0.3s;
       word-break: break-all;
+      text-align: left;
     }
     
-    /* 読み取り成功時のクラス（JSから操作） */
     .success {
       background-color: #e8f5e9 !important;
       border-left-color: #4caf50 !important;
       color: #2e7d32;
     }
 
-    /* html5-qrcodeの内部ボタンを非表示にする（自作ボタンを使うため） */
-    #reader button {
-      display: none;
-    }
+    #reader button { display: none; }
   </style>
 </head>
 <body>
@@ -86,9 +87,7 @@
 
   <div class="container">
     <button id="start-btn" onclick="initScanner()">カメラを起動する</button>
-    
     <div id="reader"></div>
-    
     <div id="result">スキャンを開始してください</div>
   </div>
 
@@ -97,6 +96,24 @@
 
   let html5QrCode;
   let isScanning = false;
+
+  // 「ピッ」という音を出す関数
+  function playBeep() {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5の音
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.2);
+  }
 
   function initScanner() {
     document.getElementById("start-btn").style.display = "none";
@@ -110,6 +127,7 @@
       aspectRatio: 1.0
     };
 
+    // { facingMode: "user" } で前面カメラを指定
     html5QrCode.start(
       { facingMode: "user" }, 
       config,
@@ -117,50 +135,63 @@
     ).then(() => {
       document.getElementById("result").innerText = "スキャン待機中...";
     }).catch(err => {
-      document.getElementById("result").innerText =
-        "カメラエラー: " + err.message;
+      document.getElementById("result").innerText = "カメラエラー: " + err.message;
       document.getElementById("start-btn").style.display = "inline-block";
     });
   }
 
   function onScanSuccess(decodedText) {
-  if (isScanning) return;
-  isScanning = true;
+    if (isScanning) return;
+    isScanning = true;
 
-  const resultElem = document.getElementById("result");
-  resultElem.classList.add("success");
-  resultElem.innerHTML = "送信中...";
+    // 音とバイブレーション
+    playBeep();
+    if (navigator.vibrate) navigator.vibrate(100);
 
-  const url = GAS_URL + "?id=" + encodeURIComponent(decodedText);
+    const body = document.body;
+    const resultElem = document.getElementById("result");
 
-  fetch(url)
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === "success") {
+    // 送信中の状態（黄色）
+    body.classList.add("sending");
+    resultElem.innerHTML = "<strong>送信中...</strong>";
 
-        const recordedDate = new Date(data.recordedAt);
-        const formatted = recordedDate.toLocaleString("ja-JP");
+    const url = GAS_URL + "?id=" + encodeURIComponent(decodedText);
 
-        resultElem.innerHTML = `
-          <strong>記録完了</strong><br>
-          ID: ${data.id}<br>
-          時刻: ${formatted}
-        `;
-      } else {
-        resultElem.innerHTML = "エラー: " + data.message;
-      }
-    })
-    .catch(err => {
-      resultElem.innerText = "通信エラー: " + err.message;
-    })
-    .finally(() => {
-      setTimeout(() => {
-        resultElem.classList.remove("success");
-        resultElem.innerHTML = "スキャン待機中...";
-        isScanning = false;
-      }, 4000);
-    });
-}
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === "success") {
+          // 成功の状態（緑色）
+          body.classList.replace("sending", "success-bg");
+          resultElem.classList.add("success");
+
+          const recordedDate = new Date(data.recordedAt);
+          const formatted = recordedDate.toLocaleString("ja-JP");
+
+          resultElem.innerHTML = `
+            <div style="font-size: 1.1em; font-weight: bold; margin-bottom: 5px;">✅ 記録完了</div>
+            ID: ${data.id}<br>
+            時刻: ${formatted}
+          `;
+        } else {
+          throw new Error(data.message);
+        }
+      })
+      .catch(err => {
+        // 失敗の状態（赤色）
+        body.classList.replace("sending", "error-bg");
+        resultElem.innerHTML = "<strong>エラー</strong><br>" + err.message;
+      })
+      .finally(() => {
+        // 4秒後に元の状態に戻す
+        setTimeout(() => {
+          body.classList.remove("sending", "success-bg", "error-bg");
+          resultElem.classList.remove("success");
+          resultElem.innerHTML = "スキャン待機中...";
+          isScanning = false;
+        }, 4000);
+      });
+  }
 </script>
-
-
+</body>
+</html>
